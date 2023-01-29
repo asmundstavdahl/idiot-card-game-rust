@@ -13,7 +13,7 @@ fn main() {
         match game.state() {
             State::Playing => game = game.play_turn(),
             State::Completed(victor) => {
-                println!("Congratulations, {victor}!");
+                println!("Congratulations, {:?}!", victor);
                 break;
             }
         }

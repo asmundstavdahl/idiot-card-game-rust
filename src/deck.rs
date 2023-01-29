@@ -21,20 +21,10 @@ impl Deck {
     }
 
     pub fn new() -> Self {
-        let mut deck = Deck { cards: vec![] };
-
-        for suit in all::<Suit>().collect::<Vec<_>>() {
-            all::<CardValue>()
-                .collect::<Vec<_>>()
-                .into_iter()
-                .for_each(|value| {
-                    deck.cards.push(Card {
-                        suit: suit,
-                        value: value,
-                    })
-                });
+        Deck {
+            cards: all::<Suit>()
+                .flat_map(|suit| all::<CardValue>().map(move |value| Card { suit, value }))
+                .collect(),
         }
-
-        deck
     }
 }
