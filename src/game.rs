@@ -9,9 +9,15 @@ pub struct Game {
     players: Vec<Player>,
 }
 impl Game {
-    pub fn new(players: usize) -> Self {
+    pub fn new(number_of_players: usize) -> Self {
+        let mut players: Vec<Player> = Vec::new();
+        players.reserve(number_of_players);
+        for i in 1..number_of_players {
+            players.push(Player::new(format!("Player {}", i)))
+        }
+
         let game = Game {
-            players: vec![Player::default(); players],
+            players,
             deck: Deck::new().shuffle(),
             ..Game::default()
         };
@@ -40,10 +46,18 @@ impl Game {
         }
     }
 
-    pub(crate) fn play_turn(&self) -> &Self {
+    pub(crate) fn play_turn(self) -> Self {
+        let current_player = self.clone().current_player();
+        match current_player {
+            None => self.play_turn(),
+            Some(player) => self.play_turn_for_player(player.clone()),
+        }
+    }
+
+    fn play_turn_for_player(self, player: Player) -> Self {
         /* loop { */
         println!("Your cards:");
-        println!("{}", self.current_player().hand);
+        println!("{}", player.hand);
         println!("Play which card? ");
 
         let mut choice = String::new();
@@ -52,7 +66,13 @@ impl Game {
         /* break
         } */
 
-        self
+        let mut players_rotated_with_next_player_first = self.players.clone();
+        players_rotated_with_next_player_first.rotate_left(1);
+
+        Self {
+            players: players_rotated_with_next_player_first,
+            ..self.clone()
+        }
     }
 
     pub(crate) fn state(&self) -> State {
@@ -62,16 +82,19 @@ impl Game {
         }
     }
 
-    fn current_player(&self) -> &Player {
-        self.players.first().unwrap()
+    fn current_player(self) -> Option<Player> {
+        self.players.first().cloned()
     }
 
-    fn victor(&self) -> Option<&Player> {
-        self.players.iter().find(|p| p.hand.cards.is_empty())
+    fn victor(&self) -> Option<Player> {
+        self.players
+            .iter()
+            .find(|p| p.hand.cards.is_empty())
+            .cloned()
     }
 }
 
-pub enum State<'a> {
+pub enum State {
     Playing,
-    Completed(&'a Player),
+    Completed(Player),
 }

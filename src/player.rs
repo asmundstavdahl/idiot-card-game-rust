@@ -1,5 +1,3 @@
-
-
 use rand::random;
 
 use super::{cards::SetOfCards, deck::Deck};
@@ -10,8 +8,21 @@ pub struct Player {
     pub name: String,
 }
 impl Player {
-    pub fn draw(&mut self, deck: &mut Deck) {
-        self.hand.add(&mut deck.draw(1))
+    pub fn new(name: String) -> Self {
+        Self {
+            hand: SetOfCards::default(),
+            name,
+        }
+    }
+
+    pub fn draw(&self, deck: &mut Deck) -> Self {
+        let mut hand = self.hand.clone();
+        hand.add(&mut deck.draw(1));
+
+        Self {
+            hand,
+            ..self.clone()
+        }
     }
 }
 
@@ -19,7 +30,7 @@ impl Default for Player {
     fn default() -> Self {
         Self {
             hand: SetOfCards::default(),
-            name: format!("Player {}", 1 + random::<u8>() % 9)
+            name: format!("Player {}", 1 + random::<u8>() % 9),
         }
     }
 }

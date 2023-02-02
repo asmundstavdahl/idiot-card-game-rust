@@ -7,7 +7,7 @@ mod player;
 use game::{Game, State};
 
 fn main() {
-    let mut game = &Game::new(2);
+    let mut game = Game::new(2);
 
     loop {
         match game.state() {
