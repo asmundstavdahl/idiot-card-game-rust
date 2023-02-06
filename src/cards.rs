@@ -23,6 +23,31 @@ impl SetOfCards {
     pub fn pop(&mut self) -> Option<Card> {
         self.cards.pop()
     }
+
+    pub fn extract_by_selector_string(&self, selector_string: String) -> (Option<Card>, Self) {
+        (
+            self.cards
+                .iter()
+                .filter(|c| c.selector_string() == selector_string)
+                .last()
+                .cloned(),
+            Self {
+                cards: self
+                    .cards
+                    .iter()
+                    .filter(|c| c.selector_string() != selector_string)
+                    .map(|c| c.to_owned())
+                    .collect(),
+            },
+        )
+    }
+
+    pub fn present_cards(&self) -> String {
+        self.cards
+            .iter()
+            .map(|c| format!("{}\t{}\n", c.selector_string(), c.to_string()))
+            .collect()
+    }
 }
 impl Display for SetOfCards {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
