@@ -1,6 +1,14 @@
-use std::{cmp, io::stdin};
+use std::{
+    cmp,
+    io::{stdin, stdout, Write},
+};
 
-use crate::{cards::SetOfCards, deck::Deck, pile::Pile, player::Player};
+use crate::{
+    cards::{Card, CardValue, SetOfCards},
+    deck::Deck,
+    pile::Pile,
+    player::Player,
+};
 
 #[derive(Default, Clone)]
 pub struct Game {
@@ -28,6 +36,8 @@ impl Game {
 
     fn initialize(self) -> Self {
         let mut deck = self.deck.clone();
+        let mut pile = self.pile.clone();
+        pile.add(&mut deck.draw(1));
         Self {
             players: self
                 .players
@@ -41,7 +51,7 @@ impl Game {
                 })
                 .collect(),
             deck,
-            ..self
+            pile,
         }
     }
 
@@ -52,67 +62,57 @@ impl Game {
         let mut deck = self.deck.clone();
         let mut pile = self.pile.clone();
 
-        println!("Pile:\n{}", pile.present_cards());
-        println!("Your hand:\n{}", current_player.hand.present_cards());
-        print!("Play which card?\n> ");
-        let mut buf = String::default();
-        let _ = stdin().read_line(&mut buf);
-        // can card be played?
-        // take card from player's hand
-        let (selected_card, other_cards) = current_player.hand.extract_by_selector_string(buf);
-        let played_card = selected_card.unwrap();
-        // put card onto pile
-        pile.add(&mut SetOfCards {
-            cards: vec![played_card],
-        });
-        // fill player's hand
-        let missing_cards = cmp::max(0, 3 - current_player.hand.cards.len());
-        current_player
-            .hand
-            .add(&mut deck.draw(missing_cards.try_into().unwrap()));
+        loop {
+            println!("Pile:\n{}", pile.present());
+            println!("Your hand:\n{}", current_player.hand.present_cards());
+            print!("Play which card?\n> ");
+            let _ = stdout().flush();
+            let mut buf = String::default();
+            let _ = stdin().read_line(&mut buf);
+            let buf = buf.trim().into();
+            // can card be played?
+            // take card from player's hand
+            let (selected_card, other_cards) = current_player.hand.extract_by_selector_string(buf);
+            let played_card = selected_card.unwrap();
 
-        let new_current_player = Player {
-            hand: other_cards,
-            ..current_player
-        };
+            match self.player_can_play_card(&current_player, &played_card) {
+                Err(reason) => {
+                    println!("{}", reason);
+                    continue;
+                }
+                Ok(()) => {
+                    // put card onto pile
+                    pile.add(&mut SetOfCards {
+                        cards: vec![played_card],
+                    });
+                    current_player.hand = other_cards;
+                    // fill player's hand
+                    let missing_cards = cmp::max(0, 3 - current_player.hand.cards.len());
+                    println!("{} draws {} card{}.", current_player.name, missing_cards, {
+                        if missing_cards > 1 {
+                            "s"
+                        } else {
+                            ""
+                        }
+                    });
+                    current_player
+                        .hand
+                        .add(&mut deck.draw(missing_cards.try_into().unwrap()));
 
-        Self {
-            players: other_players
-                .iter()
-                .cloned()
-                .chain([new_current_player].iter().cloned())
-                .collect(),
-            deck,
-            pile,
+                    return Self {
+                        players: other_players
+                            .iter()
+                            .cloned()
+                            .chain([current_player].iter().cloned())
+                            .collect(),
+                        deck,
+                        pile,
+                    };
+                }
+            }
         }
     }
-    /*
-       fn play_turn_for_player(self, player: Player) -> Self {
-           /* loop { */
-           println!("Your cards:");
-           println!("{}", player.present_cards());
-           println!("Play which card? ");
 
-           let mut choice = String::new();
-           stdin().read_line(&mut choice).unwrap();
-
-           let (extracted_card, other_cards) = player.hand.extract_by_selector_string(choice);
-
-           if let Some(card) = extracted_card {
-               return Self {};
-           }
-           /* break
-           } */
-
-           let mut players_rotated_with_next_player_first = self.players.clone();
-           players_rotated_with_next_player_first.rotate_left(1);
-
-           Self {
-               players: players_rotated_with_next_player_first,
-               ..self.clone()
-           }
-       }
-    */
     pub(crate) fn state(&self) -> State {
         match self.victor() {
             None => State::Playing,
@@ -125,6 +125,19 @@ impl Game {
             .iter()
             .find(|p| p.hand.cards.is_empty())
             .cloned()
+    }
+
+    fn player_can_play_card(&self, player: &Player, card: &Card) -> Result<(), &'static str> {
+        let value_to_beat = match self.pile.cards.last() {
+            Some(card) => card.value,
+            None => CardValue::Ace,
+        };
+
+        if card.value >= value_to_beat {
+            Ok(())
+        } else {
+            Err("Card is too weak")
+        }
     }
 }
 
