@@ -28,14 +28,16 @@ impl SetOfCards {
         (
             self.cards
                 .iter()
-                .filter(|c| c.selector_string() == selector_string)
+                .filter(|c| c.selector_string().to_lowercase() == selector_string.to_lowercase())
                 .last()
                 .cloned(),
             Self {
                 cards: self
                     .cards
                     .iter()
-                    .filter(|c| c.selector_string() != selector_string)
+                    .filter(|c| {
+                        c.selector_string().to_lowercase() != selector_string.to_lowercase()
+                    })
                     .map(|c| c.to_owned())
                     .collect(),
             },
@@ -45,7 +47,7 @@ impl SetOfCards {
     pub fn present_cards(&self) -> String {
         self.cards
             .iter()
-            .map(|c| format!("{}\t{}\n", c.selector_string(), c.to_string()))
+            .map(|c| format!("{}\n", c.present()))
             .collect()
     }
 }
@@ -75,6 +77,10 @@ impl Card {
             self.value.selector_string(),
             self.suit.selector_string(),
         )
+    }
+
+    pub fn present(&self) -> String {
+        format!("{}\t{}", self.selector_string(), self.to_string())
     }
 }
 impl ToString for Card {
