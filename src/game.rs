@@ -63,54 +63,63 @@ impl Game {
         let mut pile = self.pile.clone();
 
         loop {
-            println!("Pile:\n{}", pile.present());
-            println!("Your hand:\n{}", current_player.hand.present_cards());
-            print!("Play which card?\n> ");
-            let _ = stdout().flush();
-            let mut buf = String::default();
-            let _ = stdin().read_line(&mut buf);
-            let buf = buf.trim().into();
+            let selected_card = self.let_current_player_select_a_card(&current_player);
             // can card be played?
             // take card from player's hand
-            let (selected_card, other_cards) = current_player.hand.extract_by_selector_string(buf);
-            let played_card = selected_card.unwrap();
-
-            match self.player_can_play_card(&current_player, &played_card) {
-                Err(reason) => {
-                    println!("{}", reason);
-                    continue;
-                }
-                Ok(()) => {
-                    // put card onto pile
-                    pile.add(&mut SetOfCards {
-                        cards: vec![played_card],
-                    });
-                    current_player.hand = other_cards;
-                    // fill player's hand
-                    let missing_cards = cmp::max(0, 3 - current_player.hand.cards.len());
-                    println!("{} draws {} card{}.", current_player.name, missing_cards, {
-                        if missing_cards > 1 {
-                            "s"
-                        } else {
-                            ""
+            let (selected_card, other_cards) = current_player
+                .hand
+                .extract_by_selector_string(selected_card);
+            match selected_card {
+                None => continue,
+                Some(card) => {
+                    match self.card_can_be_played(&card) {
+                        Err(reason) => {
+                            println!("{}", reason);
+                            continue;
                         }
-                    });
-                    current_player
-                        .hand
-                        .add(&mut deck.draw(missing_cards.try_into().unwrap()));
+                        Ok(()) => {
+                            // put card onto pile
+                            pile.add(&mut SetOfCards { cards: vec![card] });
+                            current_player.hand = other_cards;
+                            // fill player's hand
+                            let missing_cards = cmp::max(0, 3 - current_player.hand.cards.len());
+                            println!("{} draws {} card{}.", current_player.name, missing_cards, {
+                                if missing_cards > 1 {
+                                    "s"
+                                } else {
+                                    ""
+                                }
+                            });
+                            current_player
+                                .hand
+                                .add(&mut deck.draw(missing_cards.try_into().unwrap()));
 
-                    return Self {
-                        players: other_players
-                            .iter()
-                            .cloned()
-                            .chain([current_player].iter().cloned())
-                            .collect(),
-                        deck,
-                        pile,
-                    };
+                            return Self {
+                                players: other_players
+                                    .iter()
+                                    .cloned()
+                                    .chain([current_player].iter().cloned())
+                                    .collect(),
+                                deck,
+                                pile,
+                            };
+                        }
+                    }
                 }
             }
         }
+    }
+
+    fn let_current_player_select_a_card(&self, player: &Player) -> String {
+        print!("\x1B[2J");
+        println!("Pile:\n{}", self.pile.present());
+        println!("Your hand:\n{}", player.hand.present_cards());
+        print!("Play which card?\n> ");
+        let _ = stdout().flush();
+        let mut buf = String::default();
+        let _ = stdin().read_line(&mut buf);
+        let buf = buf.trim().into();
+        buf
     }
 
     pub(crate) fn state(&self) -> State {
@@ -127,7 +136,7 @@ impl Game {
             .cloned()
     }
 
-    fn player_can_play_card(&self, player: &Player, card: &Card) -> Result<(), &'static str> {
+    fn card_can_be_played(&self, card: &Card) -> Result<(), &'static str> {
         let value_to_beat = match self.pile.cards.last() {
             Some(card) => card.value,
             None => CardValue::Ace,
