@@ -11,7 +11,7 @@ fn main() {
 
     loop {
         match game.state() {
-            State::Playing => game = game.play_turn(),
+            State::Playing => game = game.play(),
             State::Completed(victor) => {
                 println!("Congratulations, {}!", victor.name);
                 break;

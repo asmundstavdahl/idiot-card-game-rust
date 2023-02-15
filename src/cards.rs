@@ -4,6 +4,8 @@ use enum_iterator::Sequence;
 use rand::prelude::SliceRandom;
 use rand::thread_rng;
 
+use crate::game::SelectorString;
+
 #[derive(Debug, Default, Clone)]
 pub struct SetOfCards {
     pub cards: Vec<Card>,
@@ -24,7 +26,10 @@ impl SetOfCards {
         self.cards.pop()
     }
 
-    pub fn extract_by_selector_string(&self, selector_string: String) -> (Option<Card>, Self) {
+    pub fn extract_by_selector_string(
+        &self,
+        selector_string: SelectorString,
+    ) -> (Option<Card>, Self) {
         (
             self.cards
                 .iter()
