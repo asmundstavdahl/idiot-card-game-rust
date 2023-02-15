@@ -91,7 +91,7 @@ impl Game {
                                     current_player.hand = other_cards;
                                     // fill player's hand
                                     let missing_cards =
-                                        3 - cmp::min(0, current_player.hand.cards.len());
+                                        3 - cmp::min(3, current_player.hand.cards.len());
                                     println!(
                                         "{} draws {} card{}.",
                                         current_player.name,
