@@ -50,10 +50,9 @@ impl SetOfCards {
     }
 
     pub fn present_cards(&self) -> String {
-        self.cards
-            .iter()
-            .map(|c| format!("{}\n", c.present()))
-            .collect()
+        let mut cards = self.cards.clone();
+        cards.sort();
+        cards.iter().map(|c| format!("{}\n", c.present())).collect()
     }
 }
 impl Display for SetOfCards {
@@ -70,10 +69,10 @@ impl Display for SetOfCards {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Ord, PartialEq, PartialOrd, Eq)]
 pub struct Card {
-    pub suit: Suit,
     pub value: CardValue,
+    pub suit: Suit,
 }
 impl Card {
     pub fn selector_string(&self) -> String {
@@ -94,7 +93,7 @@ impl ToString for Card {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Sequence)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Sequence, PartialOrd, Ord)]
 pub enum Suit {
     Diamonds,
     Clubs,
@@ -112,7 +111,7 @@ impl Suit {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Sequence)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Sequence, Ord)]
 pub enum CardValue {
     Ace = 1,
     Two,
