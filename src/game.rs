@@ -8,6 +8,7 @@ use crate::{
     deck::Deck,
     pile::Pile,
     player::Player,
+    term,
 };
 
 #[derive(Default, Clone)]
@@ -61,8 +62,6 @@ impl Game {
         let mut deck = self.deck.clone();
         let mut pile = self.pile.clone();
 
-        print!("{}", term_clear());
-
         loop {
             let play_instruction = self.ask_player_for_play_instruction(&current_player);
             match play_instruction {
@@ -82,7 +81,7 @@ impl Game {
                         Some(card) => {
                             match self.card_can_be_played(&card) {
                                 Err(reason) => {
-                                    term_error(&(reason + "\n"));
+                                    term::error(&(reason + "\n"));
                                     continue;
                                 }
                                 Ok(()) => {
@@ -125,14 +124,14 @@ impl Game {
     }
 
     fn ask_player_for_play_instruction(&self, player: &Player) -> PlayInstruction {
-        println!("It's your turn, {}.", term_bold(&player.name));
+        println!("It's your turn, {}.", term::bold(&player.name));
         println!("Pile:\n{}", self.pile.present());
         println!("Your hand:\n{}", player.hand.present_cards());
         print!("Play which card? (PASS to draw pile)\n> ");
         let _ = stdout().flush();
         let mut buf = String::default();
         let _ = stdin().read_line(&mut buf);
-        print!("{}", term_clear());
+        print!("{}", term::clear());
         let buf = buf.trim().into();
         if buf == "pass" {
             PlayInstruction::Pass
@@ -167,22 +166,6 @@ impl Game {
             Err(format!("Card {} is too weak", card.selector_string()))
         }
     }
-}
-
-fn term_clear() -> String {
-    "\x1B[2J\x1B[f".to_string()
-}
-
-fn term_bold(msg: &String) -> String {
-    format!("\x1B[1m{}\x1B[0m", msg)
-}
-
-fn term_invert(msg: &String) -> String {
-    format!("\x1B[7m{}\x1B[0m", msg)
-}
-
-fn term_error(msg: &String) -> String {
-    term_invert(&term_bold(msg))
 }
 
 pub enum State {
